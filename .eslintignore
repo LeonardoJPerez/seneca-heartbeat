@@ -1,0 +1,20 @@
+// Directories
+out
+node_modules
+coverage
+
+// File patterns
+**/*.json
+**/*.md
+**/*.log
+**/*.xml
+**/*.hbs
+
+// Specific files
+Dockerfile
+docker-compose.yml
+.dockerignore
+.gitignore
+Jenkinsfile
+package.json
+mocha.opts
