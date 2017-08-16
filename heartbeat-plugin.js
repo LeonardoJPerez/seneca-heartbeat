@@ -2,6 +2,7 @@ const kinesisConnector = require('./lib/connectors/kinesisConnector');
 
 const internal$ = require('./lib');
 
+let seneca$;
 const STATS_INTERVAL = 6000;
 const defaults$ = {
     pulse: true,
@@ -9,29 +10,31 @@ const defaults$ = {
 };
 
 function heartbeatInward(ctx, data) {
-    internal$.trace(ctx, data, 'handles');
+    const boundTrace = internal$.trace.bind(seneca$, ctx, data, 'handles');
+    boundTrace();
 }
 
 function heartbeatOutward(ctx, data) {
-    internal$.trace(ctx, data, 'emits');
+    const boundTrace = internal$.trace.bind(seneca$, ctx, data, 'emits');
+    boundTrace();
 }
 
 module.exports = function heartbeatPlugin(options = defaults$) {
-    const seneca = this;
-    const opts = seneca.util.deepextend(defaults$, options);
+    seneca$ = this;
+    const opts = seneca$.util.deepextend(defaults$, options);
 
-    seneca.inward(heartbeatInward);
-    seneca.outward(heartbeatOutward);
+    seneca$.inward(heartbeatInward);
+    seneca$.outward(heartbeatOutward);
 
-    seneca.add({ role: 'heartbeat', cmd: 'get' }, internal$.get);
-    seneca.add({ role: 'heartbeat', cmd: 'manifest' }, internal$.getManifest);
-    seneca.add({ role: 'heartbeat', cmd: 'serviceName' }, internal$.getServiceName);
-    seneca.add({ role: 'heartbeat', cmd: 'stats' }, internal$.getStats);
-    seneca.add({ role: 'heartbeat', cmd: 'version' }, internal$.getVersion);
+    seneca$.add({ role: 'heartbeat', cmd: 'get' }, internal$.get);
+    seneca$.add({ role: 'heartbeat', cmd: 'manifest' }, internal$.getManifest);
+    seneca$.add({ role: 'heartbeat', cmd: 'serviceName' }, internal$.getServiceName);
+    seneca$.add({ role: 'heartbeat', cmd: 'stats' }, internal$.getStats);
+    seneca$.add({ role: 'heartbeat', cmd: 'version' }, internal$.getVersion);
 
     // Piping data to Kinesis.
     // Test code.
-    seneca.add({ role: 'heartbeat', cmd: 'send' }, function sendStats(msg, done) {
+    seneca$.add({ role: 'heartbeat', cmd: 'send' }, function sendStats(msg, done) {
         this.act({
             role: 'heartbeat',
             cmd: 'get'
@@ -58,5 +61,5 @@ module.exports = function heartbeatPlugin(options = defaults$) {
         });
     });
 
-    internal$.init.call(seneca, opts);
+    internal$.init.call(seneca$, opts);
 };
